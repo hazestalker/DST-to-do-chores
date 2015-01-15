@@ -9,7 +9,28 @@
 local PrefabLibrary = Class( function(self, fn)
 	self.stats = {}
 	self.fn = fn
-	end)
+
+  -- self:DieTest()
+  end)
+function PrefabLibrary:DieTest()
+  local prefab = "butterfly"
+  local data = nil
+  if self.stats[prefab] == nil then
+    local realMaster =  TheWorld.ismastersim
+    TheWorld.ismastersim = true
+    local _assert = assert
+    assert = function (a,b,c) end
+    local proto = SpawnPrefab(prefab)
+    assert = _assert 
+
+    proto = SpawnPrefab(prefab)
+    -- self.stats[prefab] = self.fn(proto, data)
+    proto:Remove()
+    TheWorld.ismastersim = realMaster
+  end  
+  return self.stats[prefab]
+end
+
 
 function PrefabLibrary:Get(item, data)
   if item == nil or item.prefab == nil then
@@ -37,7 +58,12 @@ function PrefabLibrary:Get(item, data)
   if self.stats[prefab] == nil then
   	local realMaster =  TheWorld.ismastersim
   	TheWorld.ismastersim = true
-  	local proto = SpawnPrefab(prefab)
+
+    local _assert = assert
+    assert = function (a,b,c) end
+    local proto = SpawnPrefab(prefab)
+    assert = _assert 
+    
   	self.stats[prefab] = self.fn(proto, data)
   	proto:Remove()
   	TheWorld.ismastersim = realMaster

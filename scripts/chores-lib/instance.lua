@@ -10,6 +10,38 @@ Inst = Class(function(self, inst)
   self.inst = inst
   end)
 
+function Inst:builder_IsBusy()
+  if IsDST() == false then
+    return false;
+  else 
+    return self.inst.replica.builder:IsBusy()
+  end
+
+end
+
+function Inst:builder_KnowsRecipe(recipename)
+  if IsDST() == false then
+    return self.inst.components.builder:KnowsRecipe(recipename)
+  else 
+    return self.inst.replica.builder:KnowsRecipe(recipename)
+  end
+end
+function Inst:builder_CanBuild(recipename)
+  if IsDST() == false then
+    return self.inst.components.builder:CanBuild(recipename)
+  else 
+    return self.inst.replica.builder:CanBuild(recipename)
+  end
+end
+function Inst:builder_MakeRecipeBy(recipename)
+  local recipe = AllRecipes[recipename]
+  if IsDST() == false then
+    self.inst.components.builder:MakeRecipe(recipe)
+  else
+    self.inst.replica.builder:MakeRecipeFromMenu(recipe)
+  end 
+end
+
 function Inst:combat()
   if IsDST() == false then
     return self.inst.components.combat
@@ -71,7 +103,7 @@ function Inst:inventory_GetEquippedItem(slot)
     return self.inst.replica.inventory:GetEquippedItem(slot)  
   end 
 end
-function Inst:inventory_GetAllItem() 
+function Inst:inventory_GetAllItems() 
   local items = {}
   for k,v in pairs(self:inventory_GetItems()) do table.insert(items, v) end 
   for k,v in pairs(self:inventory_GetEquips()) do table.insert(items, v) end  
@@ -86,6 +118,55 @@ function Inst:inventory_GetAllItem()
   end
   return items 
 end
+function Inst:inventory_FindItems(fn) 
+  if IsDST() == false then
+    return self.inst.components.inventory:FindItems(fn)
+  else
+    local items = self:inventory_GetAllItems()
+    local result = {} 
+    for k,v in pairs(items) do
+      if fn(v) then 
+        table.insert(result, v) 
+      end
+    end
+    return result
+  end
+end
+
+function Inst:inventory_GetActiveItem()
+  return self.inst.replica.inventory:GetActiveItem()
+end
+
+function Inst:inventory_ReturnActiveItem()
+  return self.inst.replica.inventory:ReturnActiveItem()
+end
+
+function Inst:inventory_TakeActiveItemFromAllOfSlot(fn)
+  for k,v in pairs(self:inventory_GetItems()) do 
+    if fn(v) then 
+      self.inst.replica.inventory:TakeActiveItemFromAllOfSlot(k)
+      return 
+    end   
+  end 
+  for k,v in pairs(self:inventory_GetEquips()) do
+    if fn(v) then 
+      self.inst.replica.inventory:TakeActiveItemFromAllOfSlot(k)
+      return
+    end   
+  end   
+
+  local overflow = self:inventory_GetOverflowContainer()
+  if overflow ~= nil then  
+    if overflow.slots then 
+      for k,v in pairs(overflow:GetItems()) do 
+        if fn(v) then
+          overflow:TakeActiveItemFromAllOfSlot(k)
+        end
+      end  
+    end
+  end
+end
+
 function Inst:inventory_UseItemFromInvTile(item)
   if IsDST() == false then 
     return self.inst.components.inventory:UseItemFromInvTile(item)

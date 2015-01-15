@@ -12,6 +12,12 @@ local SMALLSCALE = 1.0
 local LARGESCALE = 1.5
 local BROWN = {80/255, 60/255, 30/255, 1}
 
+Assets = {
+  Asset("ATLAS", "images/avatars.xml"),
+  Asset("IMAGE", "images/avatars.tex"),
+}
+
+
 local BadgeButton = Class(Button, function(self)
   Button._ctor(self)
   -- self:SetClickable(false) 

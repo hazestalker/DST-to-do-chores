@@ -36,4 +36,5 @@ function CountDown:Turnoff()
 end
 
 
+CountDown.TEST = "CHORES"
 return CountDown
