@@ -3,32 +3,64 @@
 local Inst = require "chores-lib.instance" 
 local PrefabLibary = require("chores-lib.prefablibrary")  
 
+
+
+local ChoreLib = PrefabLibary(function (proto)
+  local stat = {} 
+  if proto.components.tool ~= nil then
+    stat.tool = {}
+    stat.tool.CHOP = proto.components.tool:CanDoAction(ACTIONS.CHOP)
+    stat.tool.DIG = proto.components.tool:CanDoAction(ACTIONS.DIG)
+  end
+  return stat
+  end)
+
+local function _isChopper(item)
+  if item == nil then return false end
+  local stat = ChoreLib:Get(item)
+  if stat == nil then return false end
+  if stat.tool == nil then return false end
+  return stat.tool.CHOP
+end
+
+local function _isDigger(item)
+  if item == nil then return false end
+  local stat = ChoreLib:Get(item)
+  if stat == nil then return false end
+  if stat.tool == nil then return false end
+  return stat.tool.DIG
+end
+
+local function _IsTree(item)
+  return item ~= nil and item:HasTag("tree") and not item:HasTag("stump") and not item:HasTag("burnt")
+end
+
+local function _IsStump(item)
+  return item ~= nil and item:HasTag("stump") 
+end
+
+local function _IsTreeLoot(item)
+  if item.prefab == "log" then return true end 
+  if item.prefab == "charcoal" then return true end 
+  if item.prefab == "pinecone" and item.issapling:value() == false then return true end 
+  -- if item.prefab == "acorn" then return true end -- this is Birchnut
+  return false
+end
+local function _IsTreeSeed(item)
+  if item.prefab == "pinecone" and item.issapling:value() == false then return true end 
+  -- if item.prefab == "acorn" then return true end -- this is Birchnut
+  return false
+end
+
+
 local AutoChores = Class(function(self, inst)
   self.inst = inst
-  self.INST = Inst(inst) 
-
-  -- self.triggerAction = nil
-
-  -- local player self.inst
-  -- self.inst:ListenForEvent("performaction", function(inst) inst.components.auto_chores:PerformAction() end)
-
+  self.INST = Inst(inst)  
 
   print("AutoChores") 
   self.inst:ListenForEvent("actionfailed", function(inst) inst.components.auto_chores:StopLoop() end)
 
-
-  -- local auto_chores = self;
-  -- local _fnOrig = self.inst.components.playercontroller.IsAnyOfControlsPressed 
-  -- local function _fnOver(self, ...)
-  --   if auto_chores.task ~= nil then
-  --     print("fake key pressed")
-  --     return true
-  --   end 
-  --   return _fnOver(self, ...)
-  -- end  
-  -- self.inst.components.playercontroller.IsAnyOfControlsPressed = _fnOver
-
-
+  
   self.ActionButtonDown = true
   self:OverridePC()
   self:OverrideInput()
@@ -36,6 +68,25 @@ local AutoChores = Class(function(self, inst)
   end,
   nil,
   { })
+
+function AutoChores:SetTask(task)   
+  self.task = task -- "LumberJack"
+  -- print("ToBeLumberJack", self.task) 
+end 
+
+function AutoChores:StopLoop() 
+  print("StopLoop")
+  if self.task ~= nil then  
+    self.task = nil 
+  end
+end
+function AutoChores:GetAction()
+  if self.task == "LumberJack" then
+    return self:GetLumberJackAction() 
+  elseif self.task == "Planter" then
+    return self:GetPlanterAction() 
+  end
+end
 
 function AutoChores:OverrideInput()
   local auto_chores = self
@@ -89,20 +140,22 @@ function AutoChores:OverridePC()
       return
     end
 
-    local bufaction = auto_chores:GetLumberJackAction()
+    local bufaction = auto_chores:GetAction()
+
     print("auto_chores", bufaction)
     if bufaction == nil then
       auto_chores.task = nil
     else
       if bufaction.action == ACTIONS.BUILD  then
         if not PLAYER:builder_IsBusy() then
-          self.passtime = 20 -- 5 * 0.03초
+          self.passtime = 20 -- 20 * 0.03초 => 0.6초
           PLAYER:builder_MakeRecipeBy(bufaction.recipe)
         end 
       elseif bufaction.action == ACTIONS.EQUIP then
         PLAYER:inventory_UseItemFromInvTile(bufaction.invobject)
-        return
-      elseif bufaction.action == ACTIONS.DEPLOY then 
+          self.passtime = 10 -- 10 * 0.03초 => 0.3초
+          return
+        elseif bufaction.action == ACTIONS.DEPLOY then 
         -- TODO 디플로이 기능 구현 하기
         -- local act = BufferedAction(self.builder, nil, ACTIONS.DEPLOY, act.invobject, Vector3(self.inst.Transform:GetWorldPosition()))  
         local act = bufaction
@@ -152,219 +205,31 @@ function AutoChores:TestHandAction(fn)
   return fn(hands) 
 end 
 
--- function AutoChores:PerformAction()
---   if not self.triggerAction then return end
---   local delay = DELAY_TABLE[self.triggerAction]
---   self.triggerAction = nil
-
---   if delay == nil then
---     delay = DELAY_TABLE["DEFAULT"] 
---   end
---   print("next delay", delay)
---   self.inst:DoTaskInTime( delay, function() self.inst.components.auto_chores:Loop()   end )
--- end
-function AutoChores:StopLoop()
-  -- if not self.triggerAction then return end
-  -- self.triggerAction = nil
-  print("StopLoop")
-  if self.task ~= nil then 
-    -- self.task:Cancel()
-    self.task = nil 
+function AutoChores:TryActiveItem(fn)
+  local activeItem = self.INST:inventory_GetActiveItem()
+  if activeItem ~= nil and  fn(activeItem) then
+    return activeItem
   end
-end
-
-function AutoChores:DoUpdateAction(dt)
-
-
-  local isidle = self.inst:HasTag("idle")
-  local pc = self.inst.components.playercontroller
-
-  if not self.ismastersim then
-    --clear cooldowns if we actually did something on the server
-    --otherwise just decrease
-    --if the server is still "idle", then it hasn't begun processing the action yet
-    --when using movement prediction, the RPC is sent AFTER reaching the destination,
-    --so we must also check that the server is not still "moving"
-    
-    --
-    -- pc:CooldownRemoteController((isidle or (self.inst.sg ~= nil and self.inst:HasTag("moving"))) and dt or nil)
-  end
-
-
-  if self.inst.sg ~= nil then
-    isidle = self.inst.sg:HasStateTag("idle") or (isidle and self.inst:HasTag("nopredict"))
-  end
-  if not isidle then return end
-
-
-
-  local bufaction = self:GetLumberJackAction()
-
-  if bufaction == nil then
-    self:StopLoop()
-  end
-
-
-
-
-  -- local inst = self.inst
-  -- local _Do = bufaction.Do
-  -- local function _newDoFn(self)
-  --   local success, reason = _Do(self)
-  --   print("BufferedAction Done", success, reason )
-  --   if success then
-  --     local delay = DELAY_TABLE[bufaction.action]
-  --     if delay == nil then
-  --       delay = DELAY_TABLE["DEFAULT"] 
-  --     end
-  --     print("next delay", delay)
-  --     inst:DoTaskInTime( delay, loopFn )
-  --   end  
-  --   return success, reason
-  -- end
-  -- bufaction.Do = _newDoFn
-
-
-  local player = self.inst
-  print("action", bufaction) 
-
-  self.passtime = DELAY_TABLE[bufaction.action]
-  if self.passtime == nil then
-    self.passtime = DELAY_TABLE["DEFAULT"] 
-  end
-  print("passtime", self.passtime)  
-
-  local PLAYER = Inst(self.inst)
-  if bufaction.action == ACTIONS.BUILD  then
-    if not PLAYER:builder_IsBusy() then
-      PLAYER:builder_MakeRecipeBy(bufaction.recipe)
-    end 
-  elseif self.ismastersim then
-    self.inst.components.locomotor:PushAction(bufaction, true) 
-  else
-
-    if bufaction.action == ACTIONS.EQUIP then
-      PLAYER:inventory_UseItemFromInvTile(bufaction.invobject)
-    else
-      if bufaction.action ~= ACTIONS.WALKTO then
-        local function _preview_cb()
-          player.components.playercontroller:RemoteActionButton(bufaction, nil)
-        end
-        bufaction.preview_cb = _preview_cb
-      end
-      player.components.locomotor:PreviewAction(bufaction, true)
-
-      --Still need to let the server know our action button is down
-      if not self.ismastersim and self.remote_controls[CONTROL_ACTION] == nil then
-        self:RemoteActionButton()
-      end
-
-    end
+  local item = self:GetItem(fn) 
+  if item ~=nil then
+    self.INST:inventory_TakeActiveItemFromAllOfSlot(fn)
+    return item
   end
 end
 
 
 SEE_TREE_DIST = 25
-DELAY_TABLE = 
-{
-  DEFAULT = 0.5,
-  -- DEFAULT = 0.3 
-  -- [ACTIONS.PICKUP] = 0.3,
-  -- [ACTIONS.BUILD] = 0.3,
-  -- [ACTIONS.CHOP] = 0.3,
-  -- [ACTIONS.DIG] = 0.3,
-  -- [ACTIONS.EQUIP] = 0.5
-}
 
 
-function AutoChores:ToBeLumberJack()   
-
-  self.task = "LumberJack"
-  print("ToBeLumberJack", self.task)
-
-
-  -- if self.task ~= nil then return end
-  -- self.tickperiod = 0.2
-  -- self.task = self.inst:DoPeriodicTask(self.tickperiod, function()
-
-  --   self:DoUpdateAction(self.tickperiod)
-
-  --   end)
-  -- self.task:Cancel()
-end 
-
-
-function AutoChores:DoLumberJack()
-  if self.passtime > 0 then 
-    print("-")
-    return
-  end
-  local bufaction = self:GetLumberJackAction()
-  self:DoAction(bufaction)
-end
-
-
-local ChoreLib = PrefabLibary(function (proto)
-  local stat = {} 
-  if proto.components.tool ~= nil then
-    stat.tool = {}
-    stat.tool.CHOP = proto.components.tool:CanDoAction(ACTIONS.CHOP)
-    stat.tool.DIG = proto.components.tool:CanDoAction(ACTIONS.DIG)
-  end
-  return stat
-  end)
-
-local function _isChopper(item)
-  if item == nil then return false end
-  local stat = ChoreLib:Get(item)
-  if stat == nil then return false end
-  if stat.tool == nil then return false end
-  return stat.tool.CHOP
-end
-
-local function _isDigger(item)
-  if item == nil then return false end
-  local stat = ChoreLib:Get(item)
-  if stat == nil then return false end
-  if stat.tool == nil then return false end
-  return stat.tool.DIG
-end
-
-local function _IsTree(item)
-  return item ~= nil and item:HasTag("tree") and not item:HasTag("stump") and not item:HasTag("burnt")
-end
-
-local function _IsStump(item)
-  return item ~= nil and item:HasTag("stump") 
-end
-
-local function _IsTreeLoot(item)
-  if item.prefab == "log" then return true end 
-  if item.prefab == "charcoal" then return true end 
-  if item.prefab == "pinecone" and item.issapling:value() == false then return true end 
-  -- if item.prefab == "acorn" then return true end -- this is Birchnut
-  return false
-end
-local function _IsTreeSeed(item)
-  if item.prefab == "pinecone" and item.issapling:value() == false then return true end 
-  -- if item.prefab == "acorn" then return true end -- this is Birchnut
-  return false
-end
 
 function AutoChores:GetLumberJackAction()
   -- print('GetLumberJackAction')
 
   local item = nil
-
-  item = self:GetItem(_IsTreeSeed)
-  if item ~= nil then
-    self.INST:inventory_TakeActiveItemFromAllOfSlot(_IsTreeSeed)
-    print("seed", item)
-    -- return 
-    return BufferedAction(self.inst, nil, ACTIONS.DEPLOY, item, Vector3(self.inst.Transform:GetWorldPosition()))
-    -- ba.item_slot = slot
-    -- return ba
-  end
+  -- item = self:TryActiveItem(_IsTreeSeed) 
+  -- if item ~= nil then
+  --   return BufferedAction(self.inst, nil, ACTIONS.DEPLOY, item, Vector3(self.inst.Transform:GetWorldPosition()))
+  -- end
 
 
   item = self:GetItem(_isChopper)
@@ -439,7 +304,18 @@ function AutoChores:ToBeMiner( )
   -- body
 end
 
+function AutoChores:GetPlanterAction()
 
+  local item = nil
+  item = self:TryActiveItem(_IsTreeSeed) 
+  if item ~= nil then
+    local pos = Vector3(self.inst.Transform:GetWorldPosition())
+    pos.x = pos.x + 2
+    return BufferedAction(self.inst, nil, ACTIONS.DEPLOY, item, pos)
+  end
+
+
+end
 
 
 

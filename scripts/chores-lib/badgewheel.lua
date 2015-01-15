@@ -69,9 +69,8 @@ function BadgeButton:OnGainFocus()
       self:SetScale(1.1,1.1,1.1)
     end
   end
-
   if self.onfocus then
-    self.onfocus()
+    self.onfocus(true)
   end
 end
 
@@ -81,6 +80,9 @@ function BadgeButton:OnLoseFocus()
     if self.scale_on_focus then
       self:SetScale(1,1,1)
     end
+  end
+  if self.onfocus then
+    self.onfocus(false)
   end
 end
 

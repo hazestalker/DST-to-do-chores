@@ -25,6 +25,9 @@ local ChoresWheel = Class(Widget, function(self)
 
   self:BtnLumberJack()
   self:BtnMiner()
+
+
+  self:BtnPlanter()
   -- self:BtnDeploy()
   print('CHO.TEST', CountDown.TEST)
   end)
@@ -35,7 +38,7 @@ function ChoresWheel:BtnLumberJack()
   local btn = self.root:GetBadge(1)  
   img = btn:InvIcon("axe") 
   btn:SetOnClick( function ()
-    ThePlayer.components.auto_chores:ToBeLumberJack()
+    ThePlayer.components.auto_chores:SetTask("LumberJack")
     end)
 end
 
@@ -45,10 +48,30 @@ function ChoresWheel:BtnMiner()
   local btn = self.root:GetBadge(2)  
   img = btn:InvIcon("pickaxe") 
   btn:SetOnClick( function ()
-    ThePlayer.components.auto_chores:ToBeMiner()
+    -- ThePlayer.components.auto_chores:ToBeMiner()
     end)
 end
 
+function ChoresWheel:BtnPlanter( )
+  local img = nil
+  local btn = self.root:GetBadge(3)  
+  img = btn:InvIcon("pinecone") 
+  btn:SetOnClick( function ()
+    ThePlayer.components.auto_chores:SetTask("Planter")
+    end)
+
+  btn:SetOnFocus(function(gainFocus)
+    local placer_name = "pinecone_placer"
+    local deployplacer = SpawnPrefab(placer_name)
+
+
+    local pos = Vector3(ThePlayer.Transform:GetWorldPosition())
+    deployplacer.Transform:SetPosition((pos + Vector3(2, 0, 2) ):Get())
+
+    deployplacer.components.placer:OnUpdate(0)
+
+    end)
+end
 
 
 
