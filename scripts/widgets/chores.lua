@@ -1,6 +1,7 @@
 local Widget = require "widgets/widget"
 local BadgeWheel = require("chores-lib.badgewheel") 
 local CountDown = require("chores-lib.countdown") 
+local Inst = require "chores-lib.instance" 
 
 CW = nil
 local ChoresWheel = Class(Widget, function(self)
@@ -22,6 +23,8 @@ local ChoresWheel = Class(Widget, function(self)
 
   ]]
 
+  self.placerGap = 3
+  self.placers = nil
 
   self:BtnLumberJack()
   self:BtnMiner()
@@ -52,25 +55,126 @@ function ChoresWheel:BtnMiner()
     end)
 end
 
+
+
+local function _IsTreeSeed(item)
+  print('prefab', item, item.prefab)
+  if item.prefab == "pinecone" then return true end 
+  -- if item.prefab == "acorn" then return true end -- this is Birchnut
+  return false
+end
+
+
 function ChoresWheel:BtnPlanter( )
   local img = nil
   local btn = self.root:GetBadge(3)  
   img = btn:InvIcon("pinecone") 
   btn:SetOnClick( function ()
-    ThePlayer.components.auto_chores:SetTask("Planter")
+
+    local info = { }
+
+    for k, deployplacer in pairs(self.placers) do
+
+      if deployplacer.components.placer.testfn(deployplacer:GetPosition()) then
+        local data = {
+          position = deployplacer:GetPosition()
+        }
+        print('deployplacer at', data.position.x, data.position.z)
+        table.insert(info, data)
+        -- deployplacer:Remove()
+      end
+    end  
+    ThePlayer.components.auto_chores:SetTask("Planter", info)
+
     end)
 
   btn:SetOnFocus(function(gainFocus)
-    local placer_name = "pinecone_placer"
-    local deployplacer = SpawnPrefab(placer_name)
+
+    if gainFocus then
+
+      if self.placers ~= nil then return end 
+      self.placers = {}
+      -- local items = Inst(ThePlayer):inventory_GetAllItems()
+      -- for k,v in pairs(items) do
+      --   print(k,v)
+      -- end 
+
+      local items = Inst(ThePlayer):inventory_FindItems(_IsTreeSeed)
+      -- print("items", items)
+      local placer_item = items[1]
+      -- print("placer_item", placer_item, items)
+      if placer_item == nil then 
+        -- 심을것 없음 에러 
+        return
+      end
+      local placer_name = placer_item.replica.inventoryitem:GetDeployPlacerName()
+
+      -- print("placer_name", placer_name)
+
+      -- local placer_name = "pinecone_placer"
+      -- self.deployplacer.components.placer:OnUpdate(0) --so that our position is accurate on the first frame
 
 
-    local pos = Vector3(ThePlayer.Transform:GetWorldPosition())
-    deployplacer.Transform:SetPosition((pos + Vector3(2, 0, 2) ):Get())
+      for xOff = 0, 4, 1 do
+        for zOff = 0, 3, 1 do
 
-    deployplacer.components.placer:OnUpdate(0)
+          local deployplacer = SpawnPrefab(placer_name)
 
+
+          deployplacer.components.placer:SetBuilder(ThePlayer, nil, placer_item)
+
+          local function _testfn(pt) 
+            return placer_item:IsValid() and
+            placer_item.replica.inventoryitem ~= nil and
+            placer_item.replica.inventoryitem:CanDeploy(pt)
+          end
+
+          deployplacer.components.placer.testfn = _testfn
+
+          -- deployplacer:RemoveComponent("placer")
+          -- deployplacer:AddComponent("placer_orig")
+          -- deployplacer.components.placer = deployplacer.components.placer_orig
+
+          local function _replace(self, dt)
+
+            self.can_build = self.testfn == nil or self.testfn(self.inst:GetPosition())
+            local color = self.can_build and Vector3(.25,.75,.25) or Vector3(.75,.25,.25)
+            self.inst.AnimState:SetAddColour(color.x, color.y, color.z ,0)
+
+          end
+          deployplacer.components.placer.OnUpdate = _replace
+
+
+          local pos = Vector3(ThePlayer.Transform:GetWorldPosition())
+          deployplacer.offset = Vector3( (xOff -2) * self.placerGap  , 0, (zOff-2) * self.placerGap)
+          deployplacer.Transform:SetPosition((pos + deployplacer.offset ):Get())
+
+          deployplacer.components.placer:OnUpdate(0)
+          table.insert( self.placers, deployplacer)
+
+        end
+      end
+
+    else 
+      for k, v in pairs(self.placers) do
+        v:Remove()
+      end
+      self.placers = nil
+
+      return
+    end
     end)
+end
+
+function ChoresWheel:UpdateLocation(dt) 
+  -- print("onUpdate", dt)
+
+  for k, deployplacer in pairs(self.placers) do
+    local pos = Vector3(ThePlayer.Transform:GetWorldPosition())
+    -- deployplacer.offset = Vector3( (xOff -2) * self.placerGap  , 0, (zOff-2) * self.placerGap)
+    deployplacer.Transform:SetPosition((pos + deployplacer.offset ):Get())
+    deployplacer.components.placer:OnUpdate(dt)
+  end
 end
 
 
@@ -164,10 +268,6 @@ end
 
 
     -- end)
-
-function ChoresWheel:OnUpdate(dt) 
-  -- print("onUpdate", dt)
-end
 
 
 return ChoresWheel

@@ -69,8 +69,9 @@ local AutoChores = Class(function(self, inst)
   nil,
   { })
 
-function AutoChores:SetTask(task)   
+function AutoChores:SetTask(task, data)   
   self.task = task -- "LumberJack"
+  self.task_data = data
   -- print("ToBeLumberJack", self.task) 
 end 
 
@@ -298,23 +299,24 @@ function AutoChores:GetLumberJackAction()
 end 
 
 
-
-
-function AutoChores:ToBeMiner( )
-  -- body
-end
-
 function AutoChores:GetPlanterAction()
 
   local item = nil
   item = self:TryActiveItem(_IsTreeSeed) 
   if item ~= nil then
-    local pos = Vector3(self.inst.Transform:GetWorldPosition())
-    pos.x = pos.x + 2
-    return BufferedAction(self.inst, nil, ACTIONS.DEPLOY, item, pos)
+    -- local pos = Vector3(self.inst.Transform:GetWorldPosition())
+    -- pos.x = pos.x + 2
+    -- print('first', self.task_data.first)
+    -- local first = self.task_data[self.task_data.first]
+    for k, data in pairs(self.task_data) do
+      local pos = data.position
+      if item.replica.inventoryitem:CanDeploy(pos) then
+        return BufferedAction(self.inst, nil, ACTIONS.DEPLOY, item, pos)
+      end
+    end
   end
 
-
+  Inst(self.inst):inventory_ReturnActiveItem()
 end
 
 
