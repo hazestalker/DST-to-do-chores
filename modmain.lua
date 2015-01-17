@@ -92,16 +92,21 @@ local function AddWidget(parent)
   widget:Hide()
 
   -- local keydown = false
-  GLOBAL.TheInput:AddKeyDownHandler(ToggleButton, function()
-    if not IsDefaultScreen() then return end 
-    widget:Show()
-    end)
+  -- GLOBAL.TheInput:AddKeyDownHandler(ToggleButton, function()
+  --   if not IsDefaultScreen() then return end 
+  --   widget:Show()
+  --   end)
   GLOBAL.TheInput:AddKeyUpHandler(ToggleButton, function()
     if not IsDefaultScreen() then return end 
-    widget:Hide()
+    widget:Toggle()
     end)
 end
 
+
+Assets = { 
+  Asset("ATLAS", "images/fepanels.xml"),
+  Asset("IMAGE", "images/fepanels.tex"), 
+}
 
 
 if IsDST() then
@@ -109,10 +114,9 @@ if IsDST() then
     AddWidget(controls)
     end  )
 else 
-  Assets = {
-    Asset("ATLAS", "images/avatars.xml"),
-    Asset("IMAGE", "images/avatars.tex"),
-  }
+  table.insert(Assets, Asset("ATLAS", "images/avatars.xml"))
+    
+  table.insert(Assets, Asset("IMAGE", "images/avatars.tex"))
 
   AddSimPostInit(function()
     local controls = _G.ThePlayer.HUD
