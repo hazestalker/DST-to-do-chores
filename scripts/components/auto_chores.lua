@@ -93,6 +93,11 @@ function AutoChores:SetTask(task, flag, placer)
   self.task_placer = placer
   print("SetTask", task, flag, placer) 
 end 
+function AutoChores:ForceStop()
+  -- body
+  self.inst.components.locomotor:Clear()
+  self:StopLoop()
+end
 
 function AutoChores:ClearPlacer()
 

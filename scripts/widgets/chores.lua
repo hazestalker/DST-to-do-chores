@@ -113,6 +113,8 @@ local ChoresWheel = Class(Widget, function(self)
 function ChoresWheel:Toggle()
   if self.shown then
     self:Hide()
+
+    ThePlayer.components.auto_chores:ForceStop()
   else
     self:Show()
   end
