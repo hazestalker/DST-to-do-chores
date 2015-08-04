@@ -1,7 +1,7 @@
 name = "To Do Chores"
 description = "To do chores, it is painful works but imperatively necessary for surviving."
 author = "js.seth.h"
-version = "0.1-alpha"
+version = "0.6"
 
 forumthread = ""
 
@@ -18,25 +18,24 @@ reign_of_giants_compatible = true
 dst_compatible = true
 
 all_clients_require_mod = false
-clients_only_mod = false
+--This determines whether it causes a server to be marked as modded (and shows in the mod list)
+client_only_mod = true
 
-server_filter_tags = {"chores"}
-
+server_filter_tags = {"chores", "geometry", "mine", "wood","chop", "AI", "auto"}
 
 icon_atlas = "modicon.xml"
 icon = "to-do-chores.tex"
 
 local alpha = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"}
 local KEY_A = 97
-local keyslist = {} 
-local Default_Key =  "V" 
-for i = 1,#alpha do 
+local keyslist = {}
+local Default_Key =  "V"
+for i = 1,#alpha do
   keyslist[i] = {description = alpha[i],data = i + KEY_A - 1}
   if alpha[i] == Default_Key then
     Default_Key = keyslist[i].data
   end
 end
-
 
 configuration_options =
 {
@@ -46,6 +45,5 @@ configuration_options =
     options = keyslist,
     default = Default_Key
 
-  } 
+  }
 }
-
