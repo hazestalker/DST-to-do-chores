@@ -17,16 +17,14 @@ Assets = {
   Asset("IMAGE", "images/avatars.tex"),
 }
 
-
 local BadgeButton = Class(Button, function(self)
   Button._ctor(self)
-  -- self:SetClickable(false) 
+  -- self:SetClickable(false)
 
   -- self.root = self:AddChild(ImageButton(ATLAS, "avatar_bg.tex"))
-  
 
-  self.bg = self:AddChild(Image(ATLAS, "avatar_bg.tex"))  
-  self.frame = self:AddChild(Image(ATLAS, "avatar_frame_white.tex"))  
+  self.bg = self:AddChild(Image(ATLAS, "avatar_bg.tex"))
+  self.frame = self:AddChild(Image(ATLAS, "avatar_frame_white.tex"))
 
   self.text = self.frame:AddChild( Text(BODYTEXTFONT, 24, "" ))
   -- self.text:SetColour(1,1,1,1)
@@ -34,18 +32,17 @@ local BadgeButton = Class(Button, function(self)
   self.text:Hide()
   self.scale_on_focus = true
 
-  end)
-
+end)
 
 function BadgeButton:InvIcon( name )
-  local img = self.bg:AddChild(Image(ATLASINV, name .. ".tex"))    
+  local img = self.bg:AddChild(Image(ATLASINV, name .. ".tex"))
   table.insert(self, img)
   return img
 end
 function BadgeButton:Icon( atlas, name)
-  local img = self.bg:AddChild(Image(atlas, name))  
+  local img = self.bg:AddChild(Image(atlas, name))
   table.insert(self, img)
-  return img  
+  return img
 end
 function BadgeButton:Text( text )
   if text then
@@ -86,30 +83,28 @@ function BadgeButton:OnLoseFocus()
   end
 end
 
-
 local MAX_HUD_SCALE = 1.25
 local BadgeWheel = Class(Widget, function(self)
-  Widget._ctor(self, "BadgeWheel") 
+  Widget._ctor(self, "BadgeWheel")
 
   self:SetHAnchor(ANCHOR_MIDDLE)
   self:SetVAnchor(ANCHOR_MIDDLE)
-  self:SetScaleMode(SCALEMODE_PROPORTIONAL) 
+  self:SetScaleMode(SCALEMODE_PROPORTIONAL)
   self:SetMaxPropUpscale(MAX_HUD_SCALE)
   self.root = self:AddChild(Widget("root"))
 
+  self.badge = {}
 
-  self.badge = {} 
+end)
 
-  end)
-
-function BadgeWheel:CreateBadges(count) 
-  -- local dist = (65*count)/(math.pi)
-  -- local delta = 2*math.pi/count
+function BadgeWheel:CreateBadges(count)
+-- local dist = (65*count)/(math.pi)
+-- local delta = 2*math.pi/count
   local dist = ( 100 * count)/(math.pi)
   local delta = math.pi / (count)
   local theta = math.pi * 1.5 - (delta * count / 2 ) + delta / 2
-  for inx = 1, count, 1 do 
-    self.badge[inx] = self.root:AddChild(BadgeButton()) 
+  for inx = 1, count, 1 do
+    self.badge[inx] = self.root:AddChild(BadgeButton())
     self[inx] = self.badge[inx]
     self.badge[inx]:SetPosition(dist*math.cos(theta),dist*math.sin(theta), 0)
     theta = theta + delta
@@ -119,11 +114,8 @@ function BadgeWheel:GetBadge(inx)
   return self.badge[inx]
 end
 
-
-
-function BadgeWheel:OnUpdate(dt) 
+function BadgeWheel:OnUpdate(dt)
   print("onUpdate", dt)
 end
-
 
 return BadgeWheel

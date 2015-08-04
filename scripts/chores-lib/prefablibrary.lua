@@ -7,11 +7,11 @@
 -- end
 
 local PrefabLibrary = Class( function(self, fn)
-	self.stats = {}
-	self.fn = fn
+  self.stats = {}
+  self.fn = fn
 
   -- self:DieTest()
-  end)
+end)
 function PrefabLibrary:DieTest()
   local prefab = "butterfly"
   local data = nil
@@ -21,16 +21,15 @@ function PrefabLibrary:DieTest()
     local _assert = assert
     assert = function (a,b,c) end
     local proto = SpawnPrefab(prefab)
-    assert = _assert 
+    assert = _assert
 
     proto = SpawnPrefab(prefab)
     -- self.stats[prefab] = self.fn(proto, data)
     proto:Remove()
     TheWorld.ismastersim = realMaster
-  end  
+  end
   return self.stats[prefab]
 end
-
 
 function PrefabLibrary:Get(item, data)
   if item == nil or item.prefab == nil then
@@ -41,33 +40,33 @@ function PrefabLibrary:Get(item, data)
     return nil
   end
 
-  if IsDST() == false then 
+  if IsDST() == false then
     return self.fn(item, data)
   end
 
   local prefab = item.prefab
-  -- print("copy", proto)
-  -- print("components-----------")
-  -- for k, v in pairs(copy.components) do
-  --   print("copy comp = ", k, v)
-  -- end
-  -- print("replica-----------")
-  -- for k, v in pairs(copy.replica._ ) do
-  --   print("copy replica = ", k, v)
-  -- end
+-- print("copy", proto)
+-- print("components-----------")
+-- for k, v in pairs(copy.components) do
+--   print("copy comp = ", k, v)
+-- end
+-- print("replica-----------")
+-- for k, v in pairs(copy.replica._ ) do
+--   print("copy replica = ", k, v)
+-- end
   if self.stats[prefab] == nil then
-  	local realMaster =  TheWorld.ismastersim
-  	TheWorld.ismastersim = true
+    local realMaster =  TheWorld.ismastersim
+    TheWorld.ismastersim = true
 
     local _assert = assert
     assert = function (a,b,c) end
     local proto = SpawnPrefab(prefab)
-    assert = _assert 
-    
-  	self.stats[prefab] = self.fn(proto, data)
-  	proto:Remove()
-  	TheWorld.ismastersim = realMaster
-  end  
+    assert = _assert
+
+    self.stats[prefab] = self.fn(proto, data)
+    proto:Remove()
+    TheWorld.ismastersim = realMaster
+  end
   return self.stats[prefab]
 end
 

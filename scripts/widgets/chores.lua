@@ -25,28 +25,18 @@ local ChoresWheel = Class(Widget, function(self)
   self:SetScaleMode(SCALEMODE_PROPORTIONAL)
   self:SetMaxPropUpscale(MAX_HUD_SCALE)
 
-
-
-
-
-
   self.root = self:AddChild(Image("images/fepanels.xml","panel_controls.tex")) --panel_mod1.tex
 
   self.root:SetPosition(400,330) -- позиция центра полотна слева снизу
   self.root:SetTint(1,1,1,0.5) -- ?? (1,1,1,0.5)
 
-
-
-
   CW = self.root
-
 
   self.flag ={
     axe = {pinecone = false, charcoal = false},
     pickaxe = {nitre = false, goldnugget = true, moonrocknugget = false, ice = false},
     backpack = {cutgrass = true, twigs = true, berries = true, flint = true, rocks = true, red_cap = true},
     shovel = {dug_grass = true, dug_berrybush = true, dug_sapling = true},
-
     book_gardening = {dug_grass = true, dug_berrybush = false, dug_sapling = false, pinecone = false, acorn = false}
   }
 
@@ -63,7 +53,6 @@ local ChoresWheel = Class(Widget, function(self)
   -- local x,y = -125, 120
   local d_x,d_y,d_m = 60, 70, 65 -- смещения для иконок по x и по y
   local i_x,i_y = 0, #self.layout
-
 
   for i, row in pairs(self.layout) do
     if i_x<#row then i_x=#row
@@ -85,53 +74,11 @@ local ChoresWheel = Class(Widget, function(self)
     for inx, icon in pairs(row) do
       local btn = self:MakeBtn(task, icon)
       btn:SetPosition( x, y)
-
       x = x + d_x
     end
-
-
     y = y - d_y
     x = tx
   end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 end)
 
@@ -193,9 +140,6 @@ function ChoresWheel:BtnClick(task, icon)
   end
 end
 
-
-
-
 function ChoresWheel:BtnGainFocus(task, icon)
   if task == "book_gardening" and icon == "book_gardening" then
 
@@ -220,17 +164,12 @@ function ChoresWheel:BtnGainFocus(task, icon)
 
     local placer_item = Inst(ThePlayer):inventory_FindItems(_find_placer)[1]
 
-
-
     print(placer_item)
     if placer_item == nil then
-
       return
     end
 
-
     if Inst(placer_item):inventoryitem() == nil then
-
       return
     end
 
@@ -255,15 +194,10 @@ function ChoresWheel:BtnGainFocus(task, icon)
 
         deployplacer.components.placer.testfn = _testfn
 
--- deployplacer:RemoveComponent("placer")
--- deployplacer:AddComponent("placer_orig")
--- deployplacer.components.placer = deployplacer.components.placer_orig
-
         local function _replace(self, dt)
 
           self.can_build = self.testfn == nil or self.testfn(self.inst:GetPosition())
           local color = self.can_build and Vector3(.25,.75,.25) or Vector3(.75,.25,.25)
-          -- debug('SetAddColour', color.x, color.y, self.can_build, self.testfn)
           self.inst.AnimState:SetAddColour(color.x, color.y, color.z,0)
 
         end
@@ -296,7 +230,6 @@ function ChoresWheel:BtnLoseFocus(task, icon)
   end
 end
 
-
 function ChoresWheel:DoTask(task)
   local flags = {}
   for key, flag in pairs(self.flag[task]) do
@@ -306,7 +239,6 @@ function ChoresWheel:DoTask(task)
   ThePlayer.components.auto_chores:SetTask(task, flags, self.placers)
   self.placers = nil
 end
-
 
 function ChoresWheel:OnUpdate(dt )
   if self.placers == nil then return end
