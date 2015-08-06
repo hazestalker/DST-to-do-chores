@@ -149,15 +149,14 @@ function AutoChores:OverridePC()
     else
       if bufaction.action == ACTIONS.BUILD  then
         if not PLAYER:builder_IsBusy() then
-          self.passtime = 20 -- 20 * 0.03мґ€ => 0.6мґ€
+          self.passtime = 20 -- 20 * 0.03 seconds => 0.6 seconds
           PLAYER:builder_MakeRecipeBy(bufaction.recipe)
         end 
       elseif bufaction.action == ACTIONS.EQUIP then
         PLAYER:inventory_UseItemFromInvTile(bufaction.invobject)
-        self.passtime = 10 -- 10 * 0.03мґ€ => 0.3мґ€
+        self.passtime = 10 -- 10 * 0.03 seconds => 0.3 seconds
         return
       elseif bufaction.action == ACTIONS.DEPLOY then 
--- TODO л””н”ЊлЎњмќґ кё°лЉҐ кµ¬н„ н•кё°
 -- local act = BufferedAction(self.builder, nil, ACTIONS.DEPLOY, act.invobject, Vector3(self.inst.Transform:GetWorldPosition()))  
         local act = bufaction
         if not self.ismastersim then  
@@ -257,7 +256,7 @@ function AutoChores:GetLumberJackAction()
     if item == nil then return false end
     if item.prefab == "log" then return true end 
     if self.task_flag["charcoal"] == true and item.prefab == "charcoal" then return true end 
-    if self.task_flag["pinecone"] == true and item.prefab == "pinecone"--[[ and item.issapling:value() == false]] then return true end 
+    if self.task_flag["pinecone"] == true and item.prefab == "pinecone" then return true end 
     if item.prefab == "acorn" then return true end -- this is Birchnut
     return false
   end)
@@ -353,16 +352,16 @@ function AutoChores:GetMinerAction()
 
 end 
 
-function AutoChores:GetCollectorAction()  
-  local target = FindEntity(self.inst, SEE_DIST_WORK_TARGET, function (item) 
+function AutoChores:GetCollectorAction()
+  local target = FindEntity(self.inst, SEE_DIST_WORK_TARGET, function (item)
     if item == nil then return false end
-    if self.task_flag["flint"] == true and item.prefab == "flint" then return true end 
-    if self.task_flag["rocks"] == true and item.prefab == "rocks" then return true end 
     if self.task_flag["cutgrass"] == true and item.prefab == "grass" and item:HasTag("pickable") then return true end   
     if self.task_flag["twigs"] == true and item.prefab == "sapling" and item:HasTag("pickable") then return true end   
-    if self.task_flag["berries"] == true and (item.prefab == "berrybush" or item.prefab == "berrybush2") and item:HasTag("pickable") then return true end   
-    if self.task_flag["red_cap"] == true --[[and item.prefab == "mushrooms" ]]and (item.prefab == "red_mushroom" or item.prefab == "blue_mushroom" or item.prefab == "green_mushroom") and item:HasTag("pickable") then return true end   
-    return false 
+    if self.task_flag["berries"] == true and (item.prefab == "berrybush" or item.prefab == "berrybush2") and item:HasTag("pickable") then return true end
+    if self.task_flag["flint"] == true and item.prefab == "flint" then return true end
+    if self.task_flag["rocks"] == true and item.prefab == "rocks" then return true end
+    if self.task_flag["red_cap"] == true and (item.prefab == "red_mushroom" or item.prefab == "blue_mushroom" or item.prefab == "green_mushroom") and item:HasTag("pickable") then return true end
+    return false
   end)
   if target then
     if target.prefab == "flint" or target.prefab == "rocks" then
